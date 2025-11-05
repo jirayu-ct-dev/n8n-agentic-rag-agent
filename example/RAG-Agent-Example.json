@@ -1,0 +1,524 @@
+{
+  "name": "RAG-Agent-Example",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "5ef5e1e2-274b-4ade-9713-bbdb36ac358c",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1664da00-dccf-4259-aeb4-a5fcba97661c",
+      "name": "Webhook",
+      "webhookId": "5ef5e1e2-274b-4ade-9713-bbdb36ac358c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/chat/loading/start",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"chatId\": \"{{ $json.body.events[0].source.userId }}\",\n    \"loadingSeconds\": 15\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c073f062-3ff8-41d5-a852-faec1d6cc8b0",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0hRaB0g6LYIB3nhB",
+          "name": "Demo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "66da57c9-8835-465d-9aea-394f5edbd21c",
+              "name": "chatinput",
+              "value": "={{ $('Webhook').item.json.body.events[0].message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "02b9626b-e874-461a-9c02-5bfae4138f65",
+              "name": "sessionId",
+              "value": "={{ $('Webhook').item.json.body.events[0].source.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "477c947f-4100-4baa-81c7-5ad1a3430826",
+              "name": "messageType",
+              "value": "={{ $('Webhook').item.json.body.events[0].message.type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ba7b5a1d-9c9e-43fb-91f4-a3cb1251e8bf",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0b1aa4e2-5e52-4f4c-a640-919bc5cfc932",
+              "leftValue": "={{ $json.messageType }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "da53345d-1c1d-4c0f-873f-280f7cdc2508",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=คำถาม:{{ $json.chatinput }}",
+        "options": {
+          "systemMessage": "=คุณคือ ระบบช่วยตอบคำถาม (Chatbot) สำหรับสาขาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยราชภัฏบุรีรัมย์ ชื่อ \"น้องคอม BRU\" ทำหน้าที่ให้ข้อมูลและความช่วยเหลือแก่ผู้ใช้ โดยปฏิบัติตามแนวทางดังต่อไปนี้:\n\n1.  บทบาทของแชทบอท: ให้บริการข้อมูลเกี่ยวกับหลักสูตร วิทยาการคอมพิวเตอร์ และข้อมูลทั่วไปของสาขาวิชาฯ เช่น รายละเอียดหลักสูตร, การรับสมัคร, ประชาสัมพันธ์, สถานที่, บุคลากร และกิจกรรมต่าง ๆ\n2.  รูปแบบการตอบ: ตอบคำถามด้วยภาษาที่เป็นทางการแต่เข้าใจง่าย กระชับ และตรงประเด็น\n\n== เครื่องมือที่มีให้ใช้ (Tools) ==\nคุณมีเครื่องมือดังต่อไปนี้เพื่อช่วยในการค้นหาข้อมูล:\n\n== กฎการใช้เครื่องมือ ==\n1.  **เมื่อผู้ใช้ถามคำถามที่ต้องการข้อมูล:**\n    * หากคำถามนั้นเกี่ยวข้องกับ \"สาขาวิทยาการคอมพิวเตอร์\", \"หลักสูตร\", \"การรับสมัคร\", \"ค่าเทอม\", \"อาจารย์\", \"การฝึกงาน\", หรือข้อมูลใดๆ ที่เกี่ยวข้องกับมหาวิทยาลัยราชภัฏบุรีรัมย์ **คุณต้องใช้เครื่องมือ** Retrieve Documents (As Tool for AI Agent) เพื่อค้นหาคำตอบที่ถูกต้องที่สุดของผู้ใช้\n    * ห้ามตอบคำถามเกี่ยวกับข้อมูลเหล่านี้ด้วยความรู้ของตัวเองเด็ดขาด ต้องใช้เครื่องมือค้นหาข้อมูลจาก Vector Store ก่อนเสมอ\n\n2.  **เมื่อผู้ใช้พูดคุยทั่วไป (Small Talk):**\n    * ถ้าผู้ใช้แค่ทักทาย (เช่น สวัสดี), ขอบคุณ, หรือพูดคุยเล่น (เช่น 555, โอเค) **ห้ามใช้เครื่องมือ**\n    * ในกรณีนี้ ให้คุณตอบกลับด้วยการสนทนาปกติในฐานะ \"น้องคอม BRU\" (เช่น \"สวัสดีครับ/ค่ะ มีอะไรให้ช่วยสอบถามไหมครับ/คะ\")"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "bce29717-c761-4acc-bdb2-97b2d9c70681",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        800,
+        176
+      ],
+      "id": "950229dd-361e-4f87-acee-71dea9fe90a7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PfskJnUJGF14KHfw",
+          "name": "Default Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all()\nreturn items.map(item => {\n  return {\n    json: {\n      ...item.json,\n      // เปลี่ยน \" ทั้งหมดเป็น ' และลบ \\n\n      output: item.json.output.replace(/\"/g, \"'\").replace(/\\n/g, \"\")\n    }\n  }\n})"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -128
+      ],
+      "id": "ffdb76bb-1679-4a59-a69b-9992ff8ecb8b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1840,
+        176
+      ],
+      "id": "1378f090-8967-42a0-8576-29252926321d",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "7PI0zgdtkdlvwhcc",
+          "name": "n8n-example"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        320
+      ],
+      "id": "de288447-cf02-4d37-8563-81a70f0954d7",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PfskJnUJGF14KHfw",
+          "name": "Default Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        112
+      ],
+      "id": "b056c8d0-c6b8-449d-8d4c-e789fea231f9",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PfskJnUJGF14KHfw",
+          "name": "Default Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        928,
+        128
+      ],
+      "id": "1c85a37b-22fe-4e91-ab16-85aa32943f91",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "BnsMsHkhsPIluZJB",
+          "name": "RAG-LineBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## RAG AI Agent with Chat Interface",
+        "height": 465,
+        "width": 1708
+      },
+      "id": "2fb6054b-d820-4771-9250-cd76e3d07664",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"replyToken\":\"{{ $('Webhook').item.json.body.events[0].replyToken }}\",\n    \"messages\":[\n        {\n            \"type\":\"text\",\n            \"text\":\"{{ $json.output }}\"\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1376,
+        -128
+      ],
+      "id": "775996dd-8992-4a39-9361-d8aea1f9deaa",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0hRaB0g6LYIB3nhB",
+          "name": "Demo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Agent Tools for RAG",
+        "height": 613,
+        "width": 623,
+        "color": 4
+      },
+      "id": "eea95cfe-c0cf-4c35-9551-ea40932557c3",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "description": "นี้คือข้อมูลเกี่ยวกับสาขาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยราชภัฏบุรีรัมย์",
+        "topK": "=4"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [
+        1952,
+        -32
+      ],
+      "id": "c69060f4-c399-41de-8ef7-3b331711e1b5",
+      "name": "Retrieve Documents (As Tool for AI Agent)"
+    },
+    {
+      "parameters": {
+        "modelName": "models/embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        256
+      ],
+      "id": "4024f142-3aab-4bdf-a207-f2f772da98ee",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PfskJnUJGF14KHfw",
+          "name": "Default Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "ใช้ค้นข้อมูลหลักสูตร/ประกาศ/คู่มือของคณะวิทยาการคอมพิวเตอร์ มรภ.บุรีรัมย์",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        96
+      ],
+      "id": "1806aad5-3f11-4455-8420-97af5e99e722",
+      "name": "Retrieve Documents (As Tool for AI Agent)2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "7PI0zgdtkdlvwhcc",
+          "name": "n8n-example"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Retrieve Documents (As Tool for AI Agent)",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Retrieve Documents (As Tool for AI Agent)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Documents (As Tool for AI Agent)": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Retrieve Documents (As Tool for AI Agent)2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Documents (As Tool for AI Agent)2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b104ef67-7f59-4fc4-ab05-eaaf96d74673",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "153217ccab94c753c84957b4d37bb06c5ccbee35c6434c45f10b004343066363"
+  },
+  "id": "2hV6fexNJMWtc2Dx",
+  "tags": []
+}
