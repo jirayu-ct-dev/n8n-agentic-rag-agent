@@ -133,7 +133,6 @@ example/RAG-VectorStore-Example.json
 - `vectorStoreSQL.sql` SQL สำหรับสร้าง vector store ใน Supabase
 - `example/RAG-Agent-Example.json` workflow ตัวอย่างสำหรับ RAG Agent
 - `example/RAG-VectorStore-Example.json` workflow ตัวอย่างสำหรับสร้าง vector store
-- `translate.json` ไฟล์แปลหรือข้อมูลประกอบเพิ่มเติม
 
 ## หมายเหตุ
 
